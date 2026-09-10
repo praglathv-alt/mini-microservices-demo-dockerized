@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Microservices Demo Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+  h1 { color: #222; }
+  .subtitle { color: #666; margin-bottom: 25px; }
+  .grid { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; }
+  .card { background: white; border-radius: 8px; padding: 15px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); flex: 1; min-width: 180px; }
+  .card h3 { margin: 0 0 5px 0; font-size: 15px; }
+  .status-up { color: #1a7f37; font-weight: bold; }
+  .status-down { color: #c0392b; font-weight: bold; }
+  .panel { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  button { background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-right: 8px; margin-bottom: 8px; }
+  button:hover { background: #1d4ed8; }
+  select, input { padding: 6px; border-radius: 5px; border: 1px solid #ccc; margin-right: 8px; margin-bottom: 8px; }
+  pre { background: #0f172a; color: #d1fae5; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; font-size: 14px; }
+  th { background: #f0f0f0; }
+</style>
+</head>
+<body>
+
+<h1>🧩 Microservices Demo</h1>
+<div class="subtitle">API Gateway (port 5000) → User Service (5002) · Product Service (5001) · Order Service (5003)</div>
+
+<div class="panel">
+  <h3>1. Service Health Check</h3>
+  <button onclick="checkStatus()">Refresh Status</button>
+  <div class="grid" id="statusGrid"></div>
+</div>
+
+<div class="panel">
+  <h3>2. Users (from User Service)</h3>
+  <button onclick="loadUsers()">Load Users</button>
+  <div id="usersTable"></div>
+</div>
+
+<div class="panel">
+  <h3>3. Products (from Product Service)</h3>
+  <button onclick="loadProducts()">Load Products</button>
+  <div id="productsTable"></div>
+</div>
+
+<div class="panel">
+  <h3>4. Place an Order (Order Service talks to User + Product Service)</h3>
+  User ID: <input id="userId" type="number" value="1" style="width:60px">
+  Product ID: <input id="productId" type="number" value="101" style="width:60px">
+  Qty: <input id="qty" type="number" value="1" style="width:60px">
+  <button onclick="placeOrder()">Place Order</button>
+  <pre id="orderResult">Order result will appear here...</pre>
+</div>
+
+<div class="panel">
+  <h3>5. All Orders</h3>
+  <button onclick="loadOrders()">Load Orders</button>
+  <div id="ordersTable"></div>
+</div>
+
+<script>
+async function checkStatus() {
+  const res = await fetch('/gateway/status');
+  const data = await res.json();
+  const grid = document.getElementById('statusGrid');
+  grid.innerHTML = '';
+  for (const key in data) {
+    const s = data[key];
+    grid.innerHTML += `<div class="card">
+      <h3>${s.service}</h3>
+      <div class="${s.status === 'UP' ? 'status-up' : 'status-down'}">${s.status}</div>
+      ${s.port ? '<div>Port: ' + s.port + '</div>' : ''}
+    </div>`;
+  }
+}
+
+async function loadUsers() {
+  const res = await fetch('/api/users');
+  const data = await res.json();
+  let html = '<table><tr><th>ID</th><th>Name</th><th>Email</th></tr>';
+  data.forEach(u => html += `<tr><td>${u.id}</td><td>${u.name}</td><td>${u.email}</td></tr>`);
+  html += '</table>';
+  document.getElementById('usersTable').innerHTML = html;
+}
+
+async function loadProducts() {
+  const res = await fetch('/api/products');
+  const data = await res.json();
+  let html = '<table><tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th></tr>';
+  data.forEach(p => html += `<tr><td>${p.id}</td><td>${p.name}</td><td>₹${p.price}</td><td>${p.stock}</td></tr>`);
+  html += '</table>';
+  document.getElementById('productsTable').innerHTML = html;
+}
+
+async function placeOrder() {
+  const user_id = parseInt(document.getElementById('userId').value);
+  const product_id = parseInt(document.getElementById('productId').value);
+  const qty = parseInt(document.getElementById('qty').value);
+  const res = await fetch('/api/orders', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({user_id, product_id, qty})
+  });
+  const data = await res.json();
+  document.getElementById('orderResult').textContent = JSON.stringify(data, null, 2);
+  loadProducts();
+}
+
+async function loadOrders() {
+  const res = await fetch('/api/orders');
+  const data = await res.json();
+  let html = '<table><tr><th>Order ID</th><th>User</th><th>Product</th><th>Qty</th><th>Total</th></tr>';
+  data.forEach(o => html += `<tr><td>${o.order_id}</td><td>${o.user}</td><td>${o.product}</td><td>${o.qty}</td><td>₹${o.total_price}</td></tr>`);
+  html += '</table>';
+  document.getElementById('ordersTable').innerHTML = html;
+}
+
+checkStatus();
+</script>
+
+</body>
+</html>
