@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+Access token.txt
+*.rar
