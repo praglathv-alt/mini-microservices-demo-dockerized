@@ -14,6 +14,7 @@ PRODUCTS = {
     103: {"id": 103, "name": "USB Keyboard",   "price": 799,  "stock": 30},
     104: {"id": 104, "name": "Notebook",       "price": 60,   "stock": 200},
     105: {"id": 105, "name": "Pen Drive 32GB", "price": 350, "stock": 40},
+    106: {"id": 105, "name": "Pen Drive 32GB", "price": 350, "stock": 40},
 }
 
 
